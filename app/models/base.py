@@ -9,6 +9,8 @@ DEFAULT_INVESTED_AMOUNT = 0
 
 
 class BaseProjectModel(Base):
+    """Абстрактная базовая модель для проектов и пожертвований."""
+
     __abstract__ = True
     full_amount = Column(
         Integer, nullable=False

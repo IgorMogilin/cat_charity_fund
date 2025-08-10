@@ -34,7 +34,7 @@ router = APIRouter()
 async def get_all_projects(
     session: AsyncSession = Depends(get_async_session)
 ):
-    """Получить все проекты."""
+    """Получить список всех благотворительных проектов."""
     return await crud_charityproject.get_multi(session)
 
 
@@ -48,7 +48,11 @@ async def create_new_project(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(current_superuser)
 ):
-    """Создать проект и вложить доступные пожертвования."""
+    """
+    Создать новый благотворительный проект.
+    Автоматически распределяет доступные пожертвования.
+    Только для суперпользователей.
+    """
     new_project = await crud_charityproject.create(session, project_in)
 
     result = await session.execute(
@@ -76,7 +80,11 @@ async def partially_update_project(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(current_superuser)
 ):
-    """Частично обновить проект."""
+    """
+    Обновить информацию о проекте.
+    Проверяет возможность изменения.
+    Только для суперпользователей.
+    """
     db_project = await crud_charityproject.get(project_id, session)
     check_project_exists(db_project)
     check_project_not_fully_invested(db_project)
@@ -101,7 +109,11 @@ async def delete_project(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(current_superuser)
 ):
-    """Удалить проект."""
+    """
+    Удалить проект.
+    Проверяет возможность удаления.
+    Только для суперпользователей.
+    """
     project = await crud_charityproject.get(project_id, session)
     check_project_exists(project)
     check_project_can_be_deleted(project)

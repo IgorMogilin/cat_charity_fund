@@ -4,6 +4,8 @@ from .base import BaseProjectModel
 
 
 class Donation(BaseProjectModel):
+    """Модель пожертвования в благотворительный проект."""
+
     user_id = Column(
         Integer, ForeignKey('user.id')
     )

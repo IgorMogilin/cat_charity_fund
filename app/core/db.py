@@ -6,6 +6,7 @@ from app.core.config import settings
 
 
 class PreBase:
+    """Базовый класс для моделей SQLAlchemy с общими атрибутами."""
 
     @declared_attr
     def __tablename__(cls):
@@ -20,5 +21,9 @@ AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession)
 
 
 async def get_async_session():
+    """
+    Генератор асинхронных сессий для зависимостей FastAPI.
+    Автоматически закрывает сессию после использования.
+    """
     async with AsyncSessionLocal() as async_session:
         yield async_session
