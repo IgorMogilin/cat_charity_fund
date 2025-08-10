@@ -27,6 +27,14 @@ class CharityProjectUpdate(BaseModel):
     )
     full_amount: Optional[PositiveInt] = None
 
+    @root_validator
+    def check_at_least_one_field(cls, values):
+        if not any(values.values()):
+            raise ValueError(
+                "Хотя бы одно поле должно быть предоставлено для обновления"
+            )
+        return values
+
 
 class CharityProjectDB(CharityProjectBase):
     id: int

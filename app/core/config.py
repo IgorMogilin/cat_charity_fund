@@ -1,4 +1,5 @@
-from pydantic import BaseSettings
+from typing import Optional
+from pydantic import BaseSettings, EmailStr
 
 
 class Settings(BaseSettings):
@@ -6,6 +7,10 @@ class Settings(BaseSettings):
     app_description: str = 'Фонд собирает пожертвования.'
     database_url: str
     secret: str
+    first_superuser_email: Optional[EmailStr] = None
+    first_superuser_password: Optional[str] = None
+    PASSWORD_MIN_LENGTH: int = 3
+    MIN_INVESTED_AMOUNT: int = 0
 
     class Config:
         env_file = '.env'
