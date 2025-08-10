@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.validators import (
@@ -13,15 +14,13 @@ from app.api.validators import (
 from app.core.db import get_async_session
 from app.core.dependencies import current_superuser
 from app.crud.charity_project import crud_charityproject
-from app.models import User
+from app.models import Donation, User
 from app.schemas.charity_project import (
     CharityProjectCreate,
     CharityProjectDB,
     CharityProjectUpdate,
 )
 from app.services.investments import invest_money
-from app.models import Donation
-from sqlalchemy import select
 
 
 router = APIRouter()
@@ -78,17 +77,13 @@ async def partially_update_project(
     user: User = Depends(current_superuser)
 ):
     """Частично обновить проект."""
-    db_project = await crud_charityproject.get(session, project_id)
+    db_project = await crud_charityproject.get(project_id, session)
     check_project_exists(db_project)
     check_project_not_fully_invested(db_project)
     check_full_amount_not_less_than_invested(
         project_in.full_amount, db_project.invested_amount
     )
-    project = await crud_charityproject.update(
-        db=session,
-        db_obj=db_project,
-        obj_in=project_in
-    )
+    project = await crud_charityproject.update(session, db_project, project_in)
     if project.full_amount == project.invested_amount:
         project.fully_invested = True
         project.close_date = datetime.utcnow()
@@ -107,7 +102,7 @@ async def delete_project(
     user: User = Depends(current_superuser)
 ):
     """Удалить проект."""
-    project = await crud_charityproject.get(db=session, id=project_id)
+    project = await crud_charityproject.get(project_id, session)
     check_project_exists(project)
     check_project_can_be_deleted(project)
-    return await crud_charityproject.remove(db=session, id=project_id)
+    return await crud_charityproject.remove(project, session)

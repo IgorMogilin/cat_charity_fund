@@ -2,10 +2,15 @@ from typing import Optional, Union
 
 from fastapi import Depends, Request
 from fastapi_users import (
-    BaseUserManager, FastAPIUsers, IntegerIDMixin, InvalidPasswordException
+    BaseUserManager,
+    FastAPIUsers,
+    IntegerIDMixin,
+    InvalidPasswordException,
 )
 from fastapi_users.authentication import (
-    AuthenticationBackend, BearerTransport, JWTStrategy
+    AuthenticationBackend,
+    BearerTransport,
+    JWTStrategy,
 )
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,6 +69,5 @@ fastapi_users = FastAPIUsers[User, int](
     get_user_manager,
     [auth_backend],
 )
-
 current_user = fastapi_users.current_user(active=True)
 current_superuser = fastapi_users.current_user(active=True, superuser=True)

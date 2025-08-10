@@ -41,7 +41,7 @@ class CharityProjectDB(CharityProjectBase):
     invested_amount: int = 0
     fully_invested: bool = False
     create_date: datetime
-    closed_date: Optional[datetime] = None
+    close_date: Optional[datetime] = None
 
     class Config:
         orm_mode = True

@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Optional
-
-from pydantic import BaseModel, Field, PositiveInt
+from pydantic import BaseModel, PositiveInt
 
 
 class DonationBase(BaseModel):
@@ -9,11 +8,11 @@ class DonationBase(BaseModel):
     comment: Optional[str] = None
 
 
-class DonationCreate(BaseModel):
+class DonationCreate(DonationBase):
     pass
 
 
-class DonationDB(BaseModel):
+class DonationDB(DonationBase):
     id: int
     create_date: datetime
 
@@ -21,11 +20,7 @@ class DonationDB(BaseModel):
         orm_mode = True
 
 
-class DonationAdminDB(BaseModel):
-    user_id: int
+class DonationAdminDB(DonationDB):
     invested_amount: int
     fully_invested: bool
-    close_date: Optional[datetime] = None
-
-    class Config:
-        orm_mode = True
+    user_id: int

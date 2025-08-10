@@ -2,8 +2,8 @@ from fastapi import Depends
 from fastapi.exceptions import HTTPException
 from starlette import status
 
-from app.models import User
 from app.core.user import current_superuser
+from app.models import User
 
 SUPERUSER_ERROR = HTTPException(
     status_code=status.HTTP_403_FORBIDDEN,

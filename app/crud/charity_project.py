@@ -1,14 +1,13 @@
 from fastapi import HTTPException
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .base import CRUDBase
 from app.models.charity_project import CharityProject
 from app.schemas.charity_project import (
     CharityProjectCreate,
     CharityProjectUpdate,
 )
+from .base import CRUDBase
 
 
 class CRUDCharityProject(CRUDBase):
@@ -42,7 +41,7 @@ class CRUDCharityProject(CRUDBase):
         Создает проект, проверяя уникальность имени.
         """
         await self._check_name_unique(session, obj_in.name)
-        return await super().create(session, obj_in)
+        return await super().create(obj_in, session)
 
     async def update(
         self,
@@ -55,7 +54,7 @@ class CRUDCharityProject(CRUDBase):
         """
         if obj_in.name and obj_in.name != db_obj.name:
             await self._check_name_unique(session, obj_in.name)
-        return await super().update(session, db_obj, obj_in)
+        return await super().update(db_obj, obj_in, session)
 
 
 crud_charityproject = CRUDCharityProject(CharityProject)
