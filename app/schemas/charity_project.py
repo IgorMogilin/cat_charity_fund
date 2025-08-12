@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field, PositiveInt, root_validator
 
 class CharityProjectBase(BaseModel):
     """Базовая схема благотворительного проекта."""
-
     name: str = Field(
         ..., min_length=1, max_length=100
     )
@@ -23,7 +22,6 @@ class CharityProjectCreate(CharityProjectBase):
 
 class CharityProjectUpdate(BaseModel):
     """Схема для обновления проекта (все поля опциональны)."""
-
     name: Optional[str] = Field(
         None, min_length=1, max_length=100
     )
@@ -44,7 +42,6 @@ class CharityProjectUpdate(BaseModel):
 
 class CharityProjectDB(CharityProjectBase):
     """Схема для отображения проекта из БД."""
-
     id: int
     invested_amount: int = 0
     fully_invested: bool = False

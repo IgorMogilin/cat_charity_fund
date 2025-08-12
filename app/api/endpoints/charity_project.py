@@ -6,42 +6,46 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.validators import (
-    check_full_amount_not_less_than_invested,
-    check_project_can_be_deleted,
-    check_project_exists,
-    check_project_not_fully_invested,
+    ensure_project_active,
+    validate_no_investments,
+    verify_project_exists,
+    validate_full_amount,
 )
 from app.core.db import get_async_session
-from app.core.dependencies import current_superuser
-from app.crud.charity_project import crud_charityproject
-from app.models import Donation, User
+from app.core.user import current_superuser
+from app.crud.charity_project import CRUDCharityProject
+from app.models import Donation, User, CharityProject
 from app.schemas.charity_project import (
     CharityProjectCreate,
     CharityProjectDB,
     CharityProjectUpdate,
 )
-from app.services.investments import invest_money
+from app.services.investments import fund_project
 
 
 router = APIRouter()
+crud = CRUDCharityProject(CharityProject)
 
 
 @router.get(
     '/',
     response_model=List[CharityProjectDB],
-    response_model_exclude_none=True
+    response_model_exclude_none=True,
+    summary="Получить все проекты"
 )
 async def get_all_projects(
     session: AsyncSession = Depends(get_async_session)
 ):
     """Получить список всех благотворительных проектов."""
-    return await crud_charityproject.get_multi(session)
+    return await crud.get_all_projects(session)
 
 
 @router.post(
     '/',
     response_model=CharityProjectDB,
-    response_model_exclude_none=True
+    response_model_exclude_none=True,
+    summary="Создать новый проект",
+    dependencies=[Depends(current_superuser)]
 )
 async def create_new_project(
     project_in: CharityProjectCreate,
@@ -53,15 +57,15 @@ async def create_new_project(
     Автоматически распределяет доступные пожертвования.
     Только для суперпользователей.
     """
-    new_project = await crud_charityproject.create(session, project_in)
 
+    new_project = await crud.create_project(session, project_in)
     result = await session.execute(
         select(Donation)
         .where(Donation.fully_invested.is_(False))
         .order_by(Donation.create_date)
     )
     open_donations = result.scalars().all()
-    changed_objs = invest_money(target=new_project, sources=open_donations)
+    changed_objs = fund_project(target=new_project, sources=open_donations)
     for obj in changed_objs:
         session.add(obj)
     await session.commit()
@@ -72,7 +76,9 @@ async def create_new_project(
 @router.patch(
     '/{project_id}',
     response_model=CharityProjectDB,
-    response_model_exclude_none=True
+    response_model_exclude_none=True,
+    summary="Обновить проект",
+    dependencies=[Depends(current_superuser)]
 )
 async def partially_update_project(
     project_id: int,
@@ -85,13 +91,15 @@ async def partially_update_project(
     Проверяет возможность изменения.
     Только для суперпользователей.
     """
-    db_project = await crud_charityproject.get(project_id, session)
-    check_project_exists(db_project)
-    check_project_not_fully_invested(db_project)
-    check_full_amount_not_less_than_invested(
+
+    db_project = await crud.get_project_by_id(session, project_id)
+    verify_project_exists(db_project)
+    ensure_project_active(db_project)
+    validate_full_amount(
         project_in.full_amount, db_project.invested_amount
     )
-    project = await crud_charityproject.update(session, db_project, project_in)
+
+    project = await crud.update_project(session, db_project, project_in)
     if project.full_amount == project.invested_amount:
         project.fully_invested = True
         project.close_date = datetime.utcnow()
@@ -102,7 +110,9 @@ async def partially_update_project(
 
 @router.delete(
     '/{project_id}',
-    response_model=CharityProjectDB
+    response_model=CharityProjectDB,
+    summary="Удалить проект",
+    dependencies=[Depends(current_superuser)]
 )
 async def delete_project(
     project_id: int,
@@ -114,7 +124,8 @@ async def delete_project(
     Проверяет возможность удаления.
     Только для суперпользователей.
     """
-    project = await crud_charityproject.get(project_id, session)
-    check_project_exists(project)
-    check_project_can_be_deleted(project)
-    return await crud_charityproject.remove(project, session)
+
+    project = await crud.get_project_by_id(session, project_id)
+    verify_project_exists(project)
+    validate_no_investments(project)
+    return await crud.delete_project(session, project)

@@ -1,52 +1,46 @@
 from http import HTTPStatus
+from typing import Optional
 
 from fastapi import HTTPException
 
+from app.core.error_message import ErrorMessage
 from app.models import CharityProject
 
 
-def check_project_exists(project: CharityProject):
-    """Проверяет, что проект существует."""
+def verify_project_exists(project: Optional[CharityProject]):
+    """Проверяет существование проекта."""
     if not project:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail="Проект не найден"
+            detail=ErrorMessage.PROJECT_NOT_FOUND
         )
 
 
-def check_project_not_fully_invested(project: CharityProject):
-    """Проверяет, что проект не полностью проинвестирован."""
-    if project.fully_invested:
+def ensure_project_active(project: CharityProject):
+    """Проверяет, что проект не закрыт."""
+    if project.close_date is not None:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail=(
-                "Нельзя редактировать полностью "
-                "проинвестированный проект."
-            )
+            detail=ErrorMessage.CLOSED_PROJECT_EDIT
         )
 
 
-def check_full_amount_not_less_than_invested(
-    new_amount: int, invested_amount: int
+def validate_full_amount(
+    new_amount: Optional[int],
+    invested_amount: int
 ):
-    """Проверяет, что новая сумма не меньше инвестированной."""
+    """Проверяет корректность суммы."""
     if new_amount is not None and new_amount < invested_amount:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail=(
-                "Новая требуемая сумма не может быть "
-                "меньше уже инвестированной."
-            )
+            detail=ErrorMessage.INVESTED_AMOUNT_GREATER_THAN_FULL_AMOUNT
         )
 
 
-def check_project_can_be_deleted(project: CharityProject):
-    """Проверяет, что проект можно удалить."""
+def validate_no_investments(project: CharityProject):
+    """Проверяет отсутствие инвестиций."""
     if project.invested_amount > 0:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail=(
-                "Нельзя удалить проект, в который уже "
-                "были инвестированы средства"
-            )
+            detail=ErrorMessage.INVESTED_PROJECT_DELETE
         )

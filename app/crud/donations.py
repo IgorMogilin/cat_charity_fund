@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,62 +8,81 @@ from app.models.charity_project import CharityProject
 from app.models.donation import Donation
 from app.models.user import User
 from app.schemas.donation import DonationCreate
-from app.services.investments import invest_money
+from app.services.investments import fund_project
 
 
 class DonationCRUD(CRUDBase):
-    """
-    CRUD для пожертвований с логикой инвестирования.
-    """
-
-    async def create_donation(
+    """CRUD-операции для модели Donation с поддержкой инвестирования."""
+    async def create_with_investment(
         self,
-        donation_in: DonationCreate,
         session: AsyncSession,
-        user: User,
+        donation_in: DonationCreate,
+        user: Optional[User] = None
     ) -> Donation:
         """
-        Создает пожертвование и инвестирует его.
+        Создать пожертвование, привязать пользователя (если передан)
+        и выполнить автоматическое инвестирование.
         """
-        new_donation = Donation(**donation_in.dict(), user_id=user.id)
-        session.add(new_donation)
+
+        data = donation_in.dict()
+        if user:
+            data["user_id"] = user.id
+
+        donation = Donation(**data)
+        session.add(donation)
         await session.commit()
-        await session.refresh(new_donation)
-        result = await session.execute(
+        await session.refresh(donation)
+
+        open_projects = await session.execute(
             select(CharityProject)
             .where(CharityProject.fully_invested.is_(False))
             .order_by(CharityProject.create_date)
         )
-        open_projects = result.scalars().all()
-        changed_objs = invest_money(target=new_donation, sources=open_projects)
-        for obj in changed_objs:
+        projects = open_projects.scalars().all()
+        updated_objects = fund_project(target=donation, sources=projects)
+        for obj in updated_objects:
             session.add(obj)
         await session.commit()
-        await session.refresh(new_donation)
-        return new_donation
+        await session.refresh(donation)
 
-    async def get_user_donations(
+        return donation
+
+    async def get_by_user(
         self,
         session: AsyncSession,
         user: User
     ) -> List[Donation]:
         """
-        Возвращает пожертвования пользователя.
+        Получить список пожертвований конкретного пользователя.
         """
         result = await session.execute(
             select(Donation).where(Donation.user_id == user.id)
         )
         return result.scalars().all()
 
-    async def get_all_donations(
+    async def get_all(
         self,
         session: AsyncSession
     ) -> List[Donation]:
         """
-        Возвращает все пожертвования.
+        Получить список всех пожертвований.
         """
         result = await session.execute(
             select(Donation).order_by(Donation.create_date)
+        )
+        return result.scalars().all()
+
+    async def get_uninvested(
+        self,
+        session: AsyncSession
+    ) -> List[Donation]:
+        """
+        Получить пожертвования, которые ещё не распределены.
+        """
+        result = await session.execute(
+            select(Donation)
+            .where(Donation.fully_invested.is_(False))
+            .order_by(Donation.create_date)
         )
         return result.scalars().all()
 
