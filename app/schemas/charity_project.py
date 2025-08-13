@@ -7,12 +7,13 @@ from pydantic import BaseModel, Field, PositiveInt, root_validator
 class CharityProjectBase(BaseModel):
     """Базовая схема благотворительного проекта."""
     name: str = Field(
-        ..., min_length=1, max_length=100
+        ..., max_length=100
     )
-    description: str = Field(
-        ..., min_length=1
-    )
+    description: str
     full_amount: PositiveInt
+
+    class Config:
+        min_anystr_length = 1
 
 
 class CharityProjectCreate(CharityProjectBase):
@@ -23,11 +24,9 @@ class CharityProjectCreate(CharityProjectBase):
 class CharityProjectUpdate(BaseModel):
     """Схема для обновления проекта (все поля опциональны)."""
     name: Optional[str] = Field(
-        None, min_length=1, max_length=100
+        None, max_length=100
     )
-    description: Optional[str] = Field(
-        None, min_length=1
-    )
+    description: Optional[str]
     full_amount: Optional[PositiveInt] = None
 
     @root_validator

@@ -7,16 +7,17 @@ from app.core.user import (
     fastapi_users,
     current_user,
 )
+from app.core.constants import (
+    AUTH_ROUTER_PREFIX,
+    AUTH_ROUTER_TAGS,
+    REGISTER_ROUTER_PREFIX,
+    USER_DELETE_ENDPOINT_NAME,
+    USER_ROUTER_PREFIX,
+    USER_ROUTER_TAGS
+)
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 
 router = APIRouter()
-
-AUTH_ROUTER_PREFIX = '/auth/jwt'
-REGISTER_ROUTER_PREFIX = '/auth'
-USER_ROUTER_PREFIX = '/users'
-AUTH_ROUTER_TAGS = ['auth']
-USER_ROUTER_TAGS = ['users']
-USER_DELETE_ENDPOINT_NAME = 'users:delete_user'
 
 router.include_router(
     fastapi_users.get_auth_router(auth_backend),

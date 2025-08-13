@@ -39,6 +39,7 @@ class CRUDCharityProject(CRUDBase):
             self,
             session: AsyncSession,
             project_in: CharityProjectCreate,
+            do_commit: bool,
     ) -> CharityProject:
         """Создать проект"""
         await self._check_name_unique(session, project_in.name)

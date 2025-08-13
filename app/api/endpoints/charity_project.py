@@ -58,7 +58,11 @@ async def create_new_project(
     Только для суперпользователей.
     """
 
-    new_project = await crud.create_project(session, project_in)
+    new_project = await crud.create_project(
+        session,
+        project_in,
+        do_commit=False
+    )
     result = await session.execute(
         select(Donation)
         .where(Donation.fully_invested.is_(False))
