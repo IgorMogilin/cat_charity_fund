@@ -3,17 +3,23 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, PositiveInt, root_validator
 
+from app.core.constants import (
+    MAX_ANYSTR_LENGTH,
+    MIN_ANYSTR_LENGTH,
+    MINIMAL_MONEY_INVESTED,
+)
+
 
 class CharityProjectBase(BaseModel):
     """Базовая схема благотворительного проекта."""
     name: str = Field(
-        ..., max_length=100
+        ..., max_length=MAX_ANYSTR_LENGTH
     )
     description: str
     full_amount: PositiveInt
 
     class Config:
-        min_anystr_length = 1
+        min_anystr_length = MIN_ANYSTR_LENGTH
 
 
 class CharityProjectCreate(CharityProjectBase):
@@ -24,7 +30,7 @@ class CharityProjectCreate(CharityProjectBase):
 class CharityProjectUpdate(BaseModel):
     """Схема для обновления проекта (все поля опциональны)."""
     name: Optional[str] = Field(
-        None, max_length=100
+        None, max_length=MAX_ANYSTR_LENGTH
     )
     description: Optional[str]
     full_amount: Optional[PositiveInt] = None
@@ -42,7 +48,7 @@ class CharityProjectUpdate(BaseModel):
 class CharityProjectDB(CharityProjectBase):
     """Схема для отображения проекта из БД."""
     id: int
-    invested_amount: int = 0
+    invested_amount: int = MINIMAL_MONEY_INVESTED
     fully_invested: bool = False
     create_date: datetime
     close_date: Optional[datetime] = None
